@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CloudVault - Dashboard</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Loading overlay -->
+  <div id="loader">
+    <div class="spinner-border text-primary" style="width: 4rem; height: 4rem;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="appToast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body" id="toastMessage">
+          Hello, world! This is a toast message.
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dashboard-wrapper">
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+      <div class="brand">
+        <i class="bi bi-cloud-check-fill text-primary"></i> CloudVault
+      </div>
+      <div class="mb-4 px-2">
+        <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Menu</small>
+      </div>
+      <a href="#dashboardSection" class="nav-link-custom active" onclick="switchTab('dashboardSection', this)">
+        <i class="bi bi-grid-1x2"></i> Dashboard
+      </a>
+      <a href="#uploadSection" class="nav-link-custom" onclick="switchTab('uploadSection', this)">
+        <i class="bi bi-cloud-arrow-up"></i> Upload File
+      </a>
+      <a href="#filesSection" class="nav-link-custom" onclick="switchTab('filesSection', this)">
+        <i class="bi bi-folder2-open"></i> My Files
+      </a>
+      <a href="#sharedSection" class="nav-link-custom" onclick="switchTab('sharedSection', this)">
+        <i class="bi bi-people"></i> Shared With Me
+      </a>
+      <a href="#duplicatesSection" class="nav-link-custom d-flex align-items-center justify-content-between" onclick="switchTab('duplicatesSection', this)">
+        <span><i class="bi bi-files-alt"></i> Duplicate Files</span>
+        <span id="duplicateNavBadge" class="badge rounded-pill bg-warning text-dark px-2 py-1 d-none" style="font-size: 0.7rem;">0</span>
+      </a>
+      <a href="#activitySection" class="nav-link-custom d-flex align-items-center justify-content-between" onclick="switchTab('activitySection', this)">
+        <span><i class="bi bi-activity"></i> Activity &amp; Logs</span>
+        <span id="activityUnreadNavBadge" class="badge rounded-pill bg-danger text-white px-2 py-1 d-none" style="font-size: 0.7rem;">0</span>
+      </a>
+      <a href="#trashSection" class="nav-link-custom" onclick="switchTab('trashSection', this)">
+        <i class="bi bi-trash"></i> Recycle Bin
+      </a>
+      
+      <div class="mt-auto">
+        <hr class="border-secondary opacity-50">
+        <a href="#" class="nav-link-custom text-danger hover-danger" onclick="logout()">
+          <i class="bi bi-box-arrow-right"></i> Logout
+        </a>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      
+      <!-- Top header (Mobile Nav Toggle + Notifications + Profile) -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+           <button class="btn btn-dark d-md-none me-3" id="sidebarToggle">
+             <i class="bi bi-list"></i>
+           </button>
+           <h3 class="fw-bold m-0 text-dark">Welcome, <span id="usernameDisplay">User</span> 👋</h3>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+           <!-- Notification Bell Dropdown -->
+           <div class="dropdown" id="notificationDropdownContainer">
+             <button class="btn btn-white shadow-sm position-relative rounded-circle p-2 d-flex align-items-center justify-content-center" type="button" id="notificationDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false" style="width: 44px; height: 44px; background: rgba(255,255,255,0.85);" title="Notifications">
+               <i class="bi bi-bell text-dark fs-5"></i>
+               <span id="notificationBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" style="font-size: 0.65rem;">
+                 0
+               </span>
+             </button>
+             <div class="dropdown-menu dropdown-menu-end shadow border-0 p-0 rounded-4" style="width: 360px; max-width: 90vw;" aria-labelledby="notificationDropdownBtn">
+               <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-light rounded-top-4">
+                 <div class="d-flex align-items-center gap-2">
+                   <h6 class="fw-bold text-dark m-0"><i class="bi bi-bell-fill text-primary me-1"></i> Notifications</h6>
+                   <span class="badge bg-primary rounded-pill small" id="notificationHeaderBadge">0</span>
+                 </div>
+                 <button class="btn btn-link btn-sm text-decoration-none text-muted p-0" id="markAllReadQuickBtn" onclick="markAllNotificationsRead()" title="Mark all as read">
+                   <small><i class="bi bi-check2-all me-1"></i>Mark read</small>
+                 </button>
+               </div>
+               <div id="notificationQuickList" class="list-group list-group-flush" style="max-height: 320px; overflow-y: auto;">
+                 <!-- Populated dynamically -->
+                 <div class="p-4 text-center text-muted small">No notifications</div>
+               </div>
+               <div class="p-2 border-top text-center bg-light rounded-bottom-4">
+                 <a href="#activitySection" class="text-decoration-none small fw-semibold text-primary" onclick="switchTab('activitySection', document.querySelector('a[href=\'#activitySection\']')); bootstrap.Dropdown.getInstance(document.getElementById('notificationDropdownBtn'))?.hide();">
+                   View All Activity &amp; Notifications <i class="bi bi-arrow-right ms-1"></i>
+                 </a>
+               </div>
+             </div>
+           </div>
+
+           <!-- Profile Avatar -->
+           <div class="dropdown">
+              <img src="https://ui-avatars.com/api/?name=User&background=4F46E5&color=fff" id="profileAvatar" class="rounded-circle shadow-sm" width="45" alt="Avatar">
+           </div>
+        </div>
+      </div>
+
+      <!-- Storage Warning Banner -->
+      <div id="storageWarningAlert" class="alert alert-warning d-none d-flex align-items-center justify-content-between p-3 mb-4 rounded-4 shadow-sm border-0" role="alert">
+        <div class="d-flex align-items-center gap-3">
+          <i class="bi bi-exclamation-triangle-fill fs-4 text-warning"></i>
+          <div>
+            <strong id="storageWarningTitle">Storage Warning</strong>
+            <div class="small" id="storageWarningText">You have used 90% of your available storage quota.</div>
+          </div>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-dark rounded-3" onclick="switchTab('trashSection', document.querySelector('a[href=\'#trashSection\']'))">
+          <i class="bi bi-trash me-1"></i> Clean Recycle Bin
+        </button>
+      </div>
+
+      <!-- Dashboard Section -->
+      <section id="dashboardSection" class="content-section">
+        <!-- Stat Cards -->
+        <div class="row g-4 mb-4">
+          <div class="col-lg-3 col-sm-6">
+            <div class="glass-panel stat-card">
+              <div class="stat-icon bg-blue-gradient shadow"><i class="bi bi-files"></i></div>
+              <div class="stat-details">
+                <h5>Active Files</h5>
+                <h3 id="statTotalFiles">0</h3>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-3 col-sm-6">
+            <div class="glass-panel stat-card">
+              <div class="stat-icon bg-green-gradient shadow"><i class="bi bi-hdd-network"></i></div>
+              <div class="stat-details">
+                <h5>Storage Used</h5>
+                <h3 id="statTotalStorage">0 MB</h3>
+                <small class="text-muted fw-bold" id="statStoragePercent" style="font-size: 0.75rem;">0% Used</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-3 col-sm-6">
+            <div class="glass-panel stat-card">
+              <div class="stat-icon bg-purple-gradient shadow"><i class="bi bi-folder2"></i></div>
+              <div class="stat-details">
+                <h5>Folders</h5>
+                <h3 id="statTotalFolders">0</h3>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-3 col-sm-6">
+            <div class="glass-panel stat-card">
+              <div class="stat-icon bg-danger bg-gradient shadow text-white"><i class="bi bi-trash"></i></div>
+              <div class="stat-details">
+                <h5>Recycle Bin</h5>
+                <h3 id="statTrashCount">0</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quota Progress & Breakdown Grid -->
+        <div class="row g-4 mb-4">
+          <!-- Quota Usage Card -->
+          <div class="col-lg-6">
+            <div class="glass-panel p-4 h-100 d-flex flex-column justify-content-between">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-dark m-0"><i class="bi bi-pie-chart-fill text-primary me-2"></i> Storage Quota</h5>
+                <span class="badge bg-primary px-3 py-2" id="quotaBadge">0% Used</span>
+              </div>
+              <p class="text-muted small mb-3">Total physical storage consumed across active files, versions, and trashed files.</p>
+              
+              <div class="progress mb-3" style="height: 18px; border-radius: 9px; background: #e5e7eb;">
+                <div id="storageProgressBar" class="progress-bar bg-primary progress-bar-striped" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+              </div>
+
+              <div class="row text-center g-2 mt-2 pt-2 border-top">
+                <div class="col-4">
+                  <small class="text-muted text-uppercase d-block" style="font-size: 0.7rem;">Used</small>
+                  <strong class="text-dark" id="quotaUsedDisplay">0 MB</strong>
+                </div>
+                <div class="col-4">
+                  <small class="text-muted text-uppercase d-block" style="font-size: 0.7rem;">Available</small>
+                  <strong class="text-success" id="quotaAvailableDisplay">500 MB</strong>
+                </div>
+                <div class="col-4">
+                  <small class="text-muted text-uppercase d-block" style="font-size: 0.7rem;">Total Limit</small>
+                  <strong class="text-primary" id="quotaLimitDisplay">500 MB</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Largest Files Card -->
+          <div class="col-lg-6">
+            <div class="glass-panel p-4 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-dark m-0"><i class="bi bi-graph-up-arrow text-success me-2"></i> Largest Files</h5>
+                <small class="text-muted">Top 5 by size</small>
+              </div>
+              <div class="list-group list-group-flush border rounded-3 overflow-hidden" id="largestFilesList">
+                <div class="text-center py-4 text-muted small">No files uploaded yet.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Storage by File Type Breakdown -->
+        <div class="glass-panel p-4 mb-4">
+          <h5 class="fw-bold text-dark mb-3"><i class="bi bi-folder-check text-primary me-2"></i> Storage by Category</h5>
+          <div class="row g-3" id="storageCategoryGrid">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Upload Section -->
+      <section id="uploadSection" class="content-section d-none">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4 class="fw-bold m-0">Upload Files</h4>
+          <div class="d-flex align-items-center gap-2">
+            <label class="text-muted small fw-semibold">Destination Folder:</label>
+            <select class="form-select form-select-sm" id="uploadFolderSelect" style="width: 200px;">
+              <option value="root">📁 Root / Home</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="glass-panel p-4 mb-4">
+          <div class="upload-area" id="dropZone">
+            <i class="bi bi-cloud-arrow-up upload-icon"></i>
+            <h5 class="fw-bold text-dark">Drag & Drop files here</h5>
+            <p class="text-muted small">Max 15MB per file. Supports Images, PDF, Docs, Code, Videos, Audio</p>
+            <button class="btn btn-primary-custom mt-3 px-4" style="width: auto;" onclick="document.getElementById('fileInput').click()">
+              <i class="bi bi-folder-plus me-1"></i> Browse Files
+            </button>
+            <input type="file" id="fileInput" class="d-none" multiple>
+          </div>
+
+          <!-- Progress Bar & Cancel Control -->
+          <div class="mt-4 d-none" id="uploadProgressContainer">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="small fw-semibold text-dark" id="uploadStatusText">Uploading...</span>
+              <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" id="cancelUploadBtn" onclick="cancelActiveUpload()">
+                <i class="bi bi-x-circle me-1"></i> Cancel
+              </button>
+            </div>
+            <div class="progress" style="height: 22px; border-radius: 10px;">
+              <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Files & Folder Browser Section -->
+      <section id="filesSection" class="content-section d-none">
+        <!-- Browser Toolbar (Breadcrumbs & Quick Actions) -->
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div class="d-flex align-items-center gap-2 flex-grow-1">
+            <nav class="breadcrumb-custom" id="breadcrumbsContainer">
+              <a href="#" onclick="navigateToFolder(null, event)"><i class="bi bi-house-door-fill"></i> Home</a>
+            </nav>
+          </div>
+
+          <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-outline-primary btn-sm rounded-3" onclick="openNewFolderModal()">
+              <i class="bi bi-folder-plus me-1"></i> New Folder
+            </button>
+            <button class="btn btn-primary-custom btn-sm rounded-3 px-3" style="width: auto;" onclick="document.getElementById('fileInput').click()">
+              <i class="bi bi-cloud-arrow-up me-1"></i> Upload
+            </button>
+            <!-- View Mode Switcher -->
+            <div class="btn-group btn-group-sm ms-2" role="group">
+              <button type="button" class="btn btn-outline-secondary active" id="listViewBtn" onclick="setViewMode('list')" title="List View">
+                <i class="bi bi-list-ul"></i>
+              </button>
+              <button type="button" class="btn btn-outline-secondary" id="gridViewBtn" onclick="setViewMode('grid')" title="Grid View">
+                <i class="bi bi-grid-3x3-gap"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Advanced Filter & Search Bar -->
+        <div class="glass-panel p-3 mb-4">
+          <!-- Primary Filter Row -->
+          <div class="row g-2 align-items-center">
+            <!-- Search -->
+            <div class="col-lg-3 col-md-6">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control border-start-0" id="searchInput" placeholder="Search filename or ext...">
+              </div>
+            </div>
+            <!-- Type Filter -->
+            <div class="col-lg-2 col-md-3 col-6">
+              <select class="form-select form-select-sm" id="typeFilter">
+                <option value="all">All File Types</option>
+                <option value="image">🖼️ Images</option>
+                <option value="document">📄 Documents / PDF</option>
+                <option value="video">🎬 Videos</option>
+                <option value="audio">🎵 Audio</option>
+                <option value="code">💻 Code / Text</option>
+                <option value="archive">📦 Archives (ZIP/RAR)</option>
+              </select>
+            </div>
+            <!-- Size Filter -->
+            <div class="col-lg-2 col-md-3 col-6">
+              <select class="form-select form-select-sm" id="sizeRangeFilter">
+                <option value="all">All File Sizes</option>
+                <option value="small">&lt; 1 MB</option>
+                <option value="medium">1 MB - 10 MB</option>
+                <option value="large">10 MB - 100 MB</option>
+                <option value="huge">&gt; 100 MB</option>
+                <option value="custom">Custom Size...</option>
+              </select>
+            </div>
+            <!-- Date Filter -->
+            <div class="col-lg-2 col-md-4 col-6">
+              <select class="form-select form-select-sm" id="dateFilter">
+                <option value="all">All Dates</option>
+                <option value="today">Today</option>
+                <option value="7days">Last 7 Days</option>
+                <option value="30days">Last 30 Days</option>
+                <option value="custom">Custom Date Range...</option>
+              </select>
+            </div>
+            <!-- Sort -->
+            <div class="col-lg-2 col-md-4 col-6">
+              <select class="form-select form-select-sm" id="sortSelect">
+                <option value="date-desc">Newest First</option>
+                <option value="date-asc">Oldest First</option>
+                <option value="name-asc">Name (A-Z)</option>
+                <option value="name-desc">Name (Z-A)</option>
+                <option value="size-desc">Largest First</option>
+                <option value="size-asc">Smallest First</option>
+              </select>
+            </div>
+            <!-- Toggle Advanced Options -->
+            <div class="col-lg-1 col-md-4 col-12 d-flex gap-1">
+              <button class="btn btn-sm btn-outline-primary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilterCollapse" aria-expanded="false" title="Advanced Search Options">
+                <i class="bi bi-sliders2"></i> <span class="d-lg-none ms-1">More Filters</span>
+              </button>
+              <button class="btn btn-sm btn-outline-secondary" type="button" id="resetFiltersBtn" title="Reset All Filters">
+                <i class="bi bi-arrow-counterclockwise"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Collapsible Advanced Search Filters -->
+          <div class="collapse mt-3 pt-3 border-top" id="advancedFilterCollapse">
+            <div class="row g-2 align-items-end">
+              <!-- Specific Extension Filter -->
+              <div class="col-md-2 col-6">
+                <label class="form-label text-muted small mb-1 fw-semibold">Extension</label>
+                <input type="text" class="form-control form-control-sm" id="extInput" placeholder="e.g. pdf, docx, png">
+              </div>
+              <!-- Access Scope Filter -->
+              <div class="col-md-2 col-6">
+                <label class="form-label text-muted small mb-1 fw-semibold">Sharing Scope</label>
+                <select class="form-select form-select-sm" id="scopeFilter">
+                  <option value="my_files">My Files Only</option>
+                  <option value="shared">Shared With Me</option>
+                  <option value="all">All Accessible</option>
+                </select>
+              </div>
+              <!-- Custom Date Range -->
+              <div class="col-md-4 col-12" id="customDateRangeInputs">
+                <label class="form-label text-muted small mb-1 fw-semibold">Date Range</label>
+                <div class="input-group input-group-sm">
+                  <input type="date" class="form-control" id="startDateInput" title="Start Date">
+                  <span class="input-group-text bg-light text-muted">to</span>
+                  <input type="date" class="form-control" id="endDateInput" title="End Date">
+                </div>
+              </div>
+              <!-- Custom Size Range in MB -->
+              <div class="col-md-2 col-6" id="customSizeRangeInputs">
+                <label class="form-label text-muted small mb-1 fw-semibold">Size Range (MB)</label>
+                <div class="input-group input-group-sm">
+                  <input type="number" class="form-control" id="minSizeMbInput" placeholder="Min" min="0" step="0.1">
+                  <input type="number" class="form-control" id="maxSizeMbInput" placeholder="Max" min="0" step="0.1">
+                </div>
+              </div>
+              <!-- Duplicates Only Toggle -->
+              <div class="col-md-2 col-6 d-flex align-items-center mb-1">
+                <div class="form-check form-switch m-0">
+                  <input class="form-check-input" type="checkbox" role="switch" id="duplicatesOnlyFilter">
+                  <label class="form-check-label small fw-semibold text-dark" for="duplicatesOnlyFilter">
+                    <i class="bi bi-files-alt text-warning me-1"></i> Duplicates Only
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Folders Grid Section -->
+        <div id="foldersSection" class="mb-4">
+          <h6 class="text-muted fw-bold text-uppercase small mb-3"><i class="bi bi-folder me-1"></i> Folders</h6>
+          <div class="row g-3" id="foldersContainer">
+            <!-- Dynamically populated folders -->
+          </div>
+        </div>
+
+        <!-- Files Section -->
+        <div class="glass-panel">
+          <!-- List View -->
+          <div id="listViewContainer" class="table-responsive">
+            <table class="table table-hover custom-table mb-0 align-middle">
+              <thead>
+                <tr>
+                  <th scope="col">File Name</th>
+                  <th scope="col">Type</th>
+                  <th scope="col">Size</th>
+                  <th scope="col">Modified</th>
+                  <th scope="col" class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="filesTableBody">
+                <!-- Dynamically populated rows -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Grid View Container -->
+          <div id="gridViewContainer" class="p-3 d-none">
+            <div class="file-grid" id="filesGridBody">
+              <!-- Dynamically populated cards -->
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div id="emptyState" class="text-center py-5 d-none">
+            <i class="bi bi-folder2-open text-muted" style="font-size: 3.5rem;"></i>
+            <h5 class="mt-3 text-muted fw-semibold">No files or folders here</h5>
+            <p class="text-muted small">Upload files or create a new folder to get started.</p>
+            <button class="btn btn-outline-primary btn-sm mt-2" onclick="document.getElementById('fileInput').click()">
+              <i class="bi bi-cloud-arrow-up me-1"></i> Upload Files Now
+            </button>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <nav class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div class="small text-muted" id="fileCountDisplay">Showing 0 files</div>
+          <ul class="pagination pagination-sm m-0" id="paginationControls">
+            <!-- Page items dynamic -->
+          </ul>
+        </nav>
+      </section>
+
+      <!-- Shared With Me Section -->
+      <section id="sharedSection" class="content-section d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+          <div>
+            <h4 class="fw-bold m-0 text-dark"><i class="bi bi-people text-primary me-2"></i> Shared With Me</h4>
+            <p class="text-muted small mb-0">Files shared with you by other users.</p>
+          </div>
+          <div class="input-group input-group-sm" style="width: 250px;">
+            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control border-start-0" id="sharedSearchInput" placeholder="Search shared files...">
+          </div>
+        </div>
+
+        <div class="glass-panel">
+          <div class="table-responsive">
+            <table class="table table-hover custom-table mb-0 align-middle">
+              <thead>
+                <tr>
+                  <th scope="col">File Name</th>
+                  <th scope="col">Owner</th>
+                  <th scope="col">Size</th>
+                  <th scope="col">Permission</th>
+                  <th scope="col">Shared Date</th>
+                  <th scope="col" class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="sharedTableBody">
+                <!-- Dynamically populated shared rows -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Empty State -->
+          <div id="sharedEmptyState" class="text-center py-5 d-none">
+            <i class="bi bi-people text-muted" style="font-size: 3.5rem;"></i>
+            <h5 class="mt-3 text-muted fw-semibold">No files shared with you</h5>
+            <p class="text-muted small">When other users share files with you, they will appear here.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Duplicate Files Section -->
+      <section id="duplicatesSection" class="content-section d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+          <div>
+            <h4 class="fw-bold m-0 text-dark"><i class="bi bi-files-alt text-warning me-2"></i> Duplicate File Finder</h4>
+            <p class="text-muted small mb-0">Files with identical cryptographic SHA-256 content across your account.</p>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-outline-primary btn-sm rounded-3" id="refreshDuplicatesBtn" onclick="fetchDuplicates()">
+              <i class="bi bi-arrow-clockwise me-1"></i> Scan / Refresh
+            </button>
+          </div>
+        </div>
+
+        <!-- Duplicates Summary Cards -->
+        <div class="row g-3 mb-4" id="duplicateSummaryRow">
+          <div class="col-md-4">
+            <div class="glass-panel p-3 d-flex align-items-center gap-3">
+              <div class="stat-icon bg-warning bg-gradient shadow text-dark" style="width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                <i class="bi bi-pie-chart-fill"></i>
+              </div>
+              <div>
+                <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Wasted Storage</small>
+                <h4 class="fw-bold text-dark m-0" id="dupWastedStorage">0 MB</h4>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="glass-panel p-3 d-flex align-items-center gap-3">
+              <div class="stat-icon bg-primary bg-gradient shadow text-white" style="width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                <i class="bi bi-collection-fill"></i>
+              </div>
+              <div>
+                <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Duplicate Sets</small>
+                <h4 class="fw-bold text-dark m-0" id="dupGroupCount">0</h4>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="glass-panel p-3 d-flex align-items-center gap-3">
+              <div class="stat-icon bg-danger bg-gradient shadow text-white" style="width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                <i class="bi bi-files"></i>
+              </div>
+              <div>
+                <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Redundant Files</small>
+                <h4 class="fw-bold text-dark m-0" id="dupRedundantCount">0</h4>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Duplicates Group List Container -->
+        <div id="duplicatesListContainer" class="d-flex flex-column gap-3">
+          <!-- Dynamically populated duplicate groups -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="duplicatesEmptyState" class="glass-panel text-center py-5 d-none">
+          <i class="bi bi-shield-check text-success" style="font-size: 3.5rem;"></i>
+          <h5 class="mt-3 text-dark fw-bold">No Duplicate Files Found</h5>
+          <p class="text-muted small mb-0">Every file stored in your cloud vault has unique content. No wasted storage space detected.</p>
+        </div>
+      </section>
+
+      <!-- Activity & Notifications Section -->
+      <section id="activitySection" class="content-section d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+          <div>
+            <h4 class="fw-bold m-0 text-dark"><i class="bi bi-activity text-primary me-2"></i> Activity &amp; Notifications</h4>
+            <p class="text-muted small mb-0">Audit trail of all file events, uploads, downloads, versions, shares, and system alerts.</p>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-outline-primary btn-sm rounded-3" onclick="fetchActivities(); fetchNotifications(); fetchActivitySummary();">
+              <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+            </button>
+          </div>
+        </div>
+
+        <!-- Activity Summary Cards -->
+        <div class="row g-3 mb-4">
+          <div class="col-lg-3 col-sm-6">
+            <div class="glass-panel stat-card">
+              <div class="stat-icon bg-blue-gradient shadow"><i class="bi bi-clock-history"></i></div>
+              <div class="stat-details">
+                <h5>Total Events</h5>
+                <h3 id="statTotalActivities">0</h3>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-3 col-sm-6">
+            <div class="glass-panel stat-card">
+              <div class="stat-icon bg-green-gradient shadow"><i class="bi bi-calendar-check"></i></div>
+              <div class="stat-details">
+                <h5>Today's Actions</h5>
+                <h3 id="statTodayActivities">0</h3>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-3 col-sm-6">
+            <div class="glass-panel stat-card">
+              <div class="stat-icon bg-purple-gradient shadow"><i class="bi bi-cloud-arrow-up"></i></div>
+              <div class="stat-details">
+                <h5>Uploads / Versions</h5>
+                <h3 id="statUploadActivities">0</h3>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-3 col-sm-6">
+            <div class="glass-panel stat-card">
+              <div class="stat-icon bg-warning bg-gradient shadow text-dark"><i class="bi bi-share-fill"></i></div>
+              <div class="stat-details">
+                <h5>Shares &amp; Links</h5>
+                <h3 id="statShareActivities">0</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity vs Notification Sub-Tabs -->
+        <ul class="nav nav-pills mb-4 gap-2" id="activityTabNav" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active rounded-pill px-4" id="activity-feed-tab" data-bs-toggle="pill" data-bs-target="#activityFeedPane" type="button" role="tab">
+              <i class="bi bi-list-columns-reverse me-1"></i> Activity Stream
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill px-4" id="notification-center-tab" data-bs-toggle="pill" data-bs-target="#notificationCenterPane" type="button" role="tab" onclick="fetchNotifications()">
+              <i class="bi bi-bell me-1"></i> Notification Center <span class="badge bg-danger rounded-pill ms-1 d-none" id="notifCenterUnreadBadge">0</span>
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content" id="activityTabContent">
+          <!-- Pane 1: Activity Feed -->
+          <div class="tab-pane fade show active" id="activityFeedPane" role="tabpanel">
+            <!-- Filter Bar for Activity -->
+            <div class="glass-panel p-3 mb-4">
+              <div class="row g-2 align-items-center">
+                <!-- Search -->
+                <div class="col-lg-3 col-md-6">
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control border-start-0" id="activitySearchInput" placeholder="Search activity...">
+                  </div>
+                </div>
+                <!-- Action Type Filter -->
+                <div class="col-lg-2 col-md-3 col-6">
+                  <select class="form-select form-select-sm" id="activityActionFilter">
+                    <option value="all">All Action Types</option>
+                    <option value="UPLOADS">📤 Uploads &amp; Versions</option>
+                    <option value="DOWNLOADS">📥 Downloads</option>
+                    <option value="PREVIEWS">👁️ Previews</option>
+                    <option value="SHARING">👥 Sharing &amp; Permissions</option>
+                    <option value="ORGANIZATION">📁 Rename &amp; Move</option>
+                    <option value="TRASH_DELETE">🗑️ Recycle &amp; Delete</option>
+                  </select>
+                </div>
+                <!-- Scope Filter -->
+                <div class="col-lg-2 col-md-3 col-6">
+                  <select class="form-select form-select-sm" id="activityScopeFilter">
+                    <option value="all">All Content</option>
+                    <option value="personal">Personal Only</option>
+                    <option value="shared">Shared Content</option>
+                  </select>
+                </div>
+                <!-- Date Range -->
+                <div class="col-lg-4 col-md-8 col-12">
+                  <div class="input-group input-group-sm">
+                    <input type="date" class="form-control" id="activityStartDate" title="Start Date">
+                    <span class="input-group-text bg-light text-muted">to</span>
+                    <input type="date" class="form-control" id="activityEndDate" title="End Date">
+                  </div>
+                </div>
+                <!-- Reset -->
+                <div class="col-lg-1 col-md-4 col-12">
+                  <button class="btn btn-sm btn-outline-secondary w-100" type="button" id="resetActivityFiltersBtn" title="Reset Activity Filters">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Activity Table Container -->
+            <div class="glass-panel">
+              <div class="table-responsive">
+                <table class="table table-hover custom-table mb-0 align-middle">
+                  <thead>
+                    <tr>
+                      <th scope="col">User</th>
+                      <th scope="col">Action</th>
+                      <th scope="col">Target Item</th>
+                      <th scope="col">Details</th>
+                      <th scope="col">Date &amp; Time</th>
+                      <th scope="col" class="text-end">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="activityTableBody">
+                    <!-- Populated dynamically -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Empty State -->
+              <div id="activityEmptyState" class="text-center py-5 d-none">
+                <i class="bi bi-clock-history text-muted" style="font-size: 3.5rem;"></i>
+                <h5 class="mt-3 text-dark fw-bold">No Activity Recorded</h5>
+                <p class="text-muted small mb-0">Your recent actions and events will automatically appear in this audit log.</p>
+              </div>
+            </div>
+
+            <!-- Pagination -->
+            <nav class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <div class="small text-muted" id="activityCountDisplay">Showing 0 activities</div>
+              <ul class="pagination pagination-sm m-0" id="activityPaginationControls">
+                <!-- Dynamic pagination -->
+              </ul>
+            </nav>
+          </div>
+
+          <!-- Pane 2: Notification Center -->
+          <div class="tab-pane fade" id="notificationCenterPane" role="tabpanel">
+            <!-- Notification Controls Bar -->
+            <div class="glass-panel p-3 mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+              <div class="d-flex align-items-center gap-2">
+                <label class="small fw-bold text-muted me-1">Filter:</label>
+                <select class="form-select form-select-sm" style="width: 150px;" id="notificationStatusFilter">
+                  <option value="all">All Notifications</option>
+                  <option value="unread">Unread Only</option>
+                  <option value="read">Read Only</option>
+                </select>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-sm btn-outline-primary rounded-3" onclick="markAllNotificationsRead()">
+                  <i class="bi bi-check2-all me-1"></i> Mark All as Read
+                </button>
+                <button class="btn btn-sm btn-outline-danger rounded-3" onclick="clearAllNotifications()">
+                  <i class="bi bi-trash3 me-1"></i> Clear All
+                </button>
+              </div>
+            </div>
+
+            <!-- Full Notifications Container -->
+            <div id="fullNotificationContainer" class="d-flex flex-column gap-2">
+              <!-- Populated dynamically -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="fullNotificationEmptyState" class="glass-panel text-center py-5 d-none">
+              <i class="bi bi-bell-slash text-muted" style="font-size: 3.5rem;"></i>
+              <h5 class="mt-3 text-dark fw-bold">No Notifications Found</h5>
+              <p class="text-muted small mb-0">You're all caught up! New file shares, version updates, and alerts will appear here.</p>
+            </div>
+
+            <!-- Notification Pagination -->
+            <nav class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <div class="small text-muted" id="notificationCountDisplay">Showing 0 notifications</div>
+              <ul class="pagination pagination-sm m-0" id="notificationPaginationControls">
+                <!-- Dynamic -->
+              </ul>
+            </nav>
+          </div>
+        </div>
+      </section>
+
+      <!-- Recycle Bin Section -->
+      <section id="trashSection" class="content-section d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+          <div>
+            <h4 class="fw-bold m-0 text-dark"><i class="bi bi-trash text-danger me-2"></i> Recycle Bin</h4>
+            <p class="text-muted small mb-0">Restore deleted files or permanently remove them to free up storage space.</p>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-outline-danger btn-sm rounded-3" id="emptyTrashBtn" onclick="promptEmptyTrash()">
+              <i class="bi bi-trash-fill me-1"></i> Empty Recycle Bin
+            </button>
+          </div>
+        </div>
+
+        <div class="glass-panel">
+          <div class="table-responsive">
+            <table class="table table-hover custom-table mb-0 align-middle">
+              <thead>
+                <tr>
+                  <th scope="col">Name</th>
+                  <th scope="col">Type</th>
+                  <th scope="col">Original Location</th>
+                  <th scope="col">Size</th>
+                  <th scope="col">Deleted Date</th>
+                  <th scope="col" class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="trashTableBody">
+                <!-- Dynamically populated trash items -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Empty State -->
+          <div id="trashEmptyState" class="text-center py-5 d-none">
+            <i class="bi bi-trash text-muted" style="font-size: 3.5rem;"></i>
+            <h5 class="mt-3 text-muted fw-semibold">Recycle Bin is empty</h5>
+            <p class="text-muted small">Deleted files and folders will appear here.</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Create Folder Modal -->
+  <div class="modal fade" id="newFolderModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow" style="border-radius: 1rem;">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold text-dark"><i class="bi bi-folder-plus text-primary me-2"></i> New Folder</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label text-muted small fw-semibold">Folder Name</label>
+          <input type="text" class="form-control" id="newFolderName" placeholder="e.g. Invoices, Project Assets" required>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary-custom" style="width: auto;" id="createFolderBtn">Create Folder</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rename Item Modal (File or Folder) -->
+  <div class="modal fade" id="renameModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow" style="border-radius: 1rem;">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold text-dark"><i class="bi bi-pencil-square text-primary me-2"></i> Rename</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label text-muted small fw-semibold">New Name</label>
+          <input type="text" class="form-control" id="renameInput" required>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary-custom" style="width: auto;" id="confirmRenameBtn">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Move File Modal -->
+  <div class="modal fade" id="moveModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow" style="border-radius: 1rem;">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold text-dark"><i class="bi bi-folder-symlink text-primary me-2"></i> Move File</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-muted mb-2">Select destination folder for <span class="fw-bold" id="moveFileName"></span>:</p>
+          <select class="form-select" id="moveFolderSelect">
+            <option value="root">📁 Root / Home</option>
+          </select>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary-custom" style="width: auto;" id="confirmMoveBtn">Move Here</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Share Management Modal -->
+  <div class="modal fade" id="shareModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 shadow-lg" style="border-radius: 1.25rem;">
+        <div class="modal-header border-bottom py-3 px-4">
+          <div class="d-flex align-items-center gap-2 text-truncate">
+            <i class="bi bi-share-fill text-primary fs-5"></i>
+            <h5 class="modal-title fw-bold text-dark text-truncate m-0" id="shareModalFileName">Share File</h5>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body p-4">
+          <!-- Nav Tabs -->
+          <ul class="nav nav-pills nav-fill mb-4 p-1 bg-light rounded-3" role="tablist">
+            <li class="nav-item">
+              <button class="nav-link active rounded-3 py-2 fw-semibold" id="tab-users-btn" data-bs-toggle="pill" data-bs-target="#tab-users">
+                <i class="bi bi-people me-1"></i> People with Access
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link rounded-3 py-2 fw-semibold" id="tab-link-btn" data-bs-toggle="pill" data-bs-target="#tab-link">
+                <i class="bi bi-link-45deg me-1"></i> Public Share Link
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link rounded-3 py-2 fw-semibold" id="tab-log-btn" data-bs-toggle="pill" data-bs-target="#tab-log">
+                <i class="bi bi-clock-history me-1"></i> Activity Log
+              </button>
+            </li>
+          </ul>
+
+          <div class="tab-content">
+            <!-- Tab 1: User-to-User Sharing -->
+            <div class="tab-pane fade show active" id="tab-users">
+              <!-- Add User Form -->
+              <div class="p-3 bg-light rounded-4 mb-4">
+                <label class="form-label text-muted small fw-bold text-uppercase">Add People</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" id="shareUserInput" placeholder="Enter email or username...">
+                  <select class="form-select" id="shareUserPermission" style="max-width: 160px;">
+                    <option value="view">Can View</option>
+                    <option value="download">Can Download</option>
+                    <option value="edit">Can Edit</option>
+                  </select>
+                  <button class="btn btn-primary-custom" id="addUserShareBtn" style="width: auto;">
+                    <i class="bi bi-person-plus me-1"></i> Share
+                  </button>
+                </div>
+              </div>
+
+              <!-- People List -->
+              <h6 class="text-muted fw-bold small text-uppercase mb-3">Who Has Access</h6>
+              <div class="list-group list-group-flush border rounded-3 overflow-hidden" id="shareUsersList">
+                <!-- Dynamically populated access items -->
+              </div>
+            </div>
+
+            <!-- Tab 2: Public Link Sharing -->
+            <div class="tab-pane fade" id="tab-link">
+              <div class="form-check form-switch mb-3 p-0 d-flex align-items-center justify-content-between">
+                <div>
+                  <h6 class="fw-bold text-dark m-0">Enable Public Share Link</h6>
+                  <small class="text-muted">Anyone with this link will be able to access this file.</small>
+                </div>
+                <input class="form-check-input ms-3 fs-4" type="checkbox" id="linkEnableToggle">
+              </div>
+
+              <div id="linkSettingsContainer" class="d-none border-top pt-3 mt-3">
+                <div class="row g-3 mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label text-muted small fw-semibold">Link Permission</label>
+                    <select class="form-select form-select-sm" id="linkPermissionSelect">
+                      <option value="view">👁️ Can View Only</option>
+                      <option value="download">📥 Can View & Download</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label text-muted small fw-semibold">Expiration</label>
+                    <select class="form-select form-select-sm" id="linkExpirySelect">
+                      <option value="never">Never Expires</option>
+                      <option value="24h">24 Hours</option>
+                      <option value="7d">7 Days</option>
+                      <option value="30d">30 Days</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label text-muted small fw-semibold">Password Protection (Optional)</label>
+                  <input type="password" class="form-control form-control-sm" id="linkPasswordInput" placeholder="Leave empty for no password">
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label text-muted small fw-semibold">Share Link URL</label>
+                  <div class="input-group input-group-sm">
+                    <input type="text" class="form-control bg-light" id="generatedShareLink" readonly>
+                    <button class="btn btn-outline-primary" id="copyShareLinkBtn" onclick="copyShareLinkText()">
+                      <i class="bi bi-clipboard me-1"></i> Copy Link
+                    </button>
+                  </div>
+                </div>
+
+                <button class="btn btn-primary-custom btn-sm" id="saveLinkSettingsBtn" style="width: auto;">
+                  Save Link Settings
+                </button>
+              </div>
+            </div>
+
+            <!-- Tab 3: Activity Log -->
+            <div class="tab-pane fade" id="tab-log">
+              <div class="list-group list-group-flush" id="shareActivityList">
+                <!-- Activity timeline dynamic -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer border-top py-2 px-4">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Version History Modal -->
+  <div class="modal fade" id="versionModal" tabindex="-1" aria-labelledby="versionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 shadow-lg" style="border-radius: 1.25rem;">
+        <div class="modal-header border-bottom py-3 px-4">
+          <div class="d-flex align-items-center gap-2 text-truncate">
+            <i class="bi bi-clock-history text-primary fs-5"></i>
+            <h5 class="modal-title fw-bold text-dark text-truncate m-0" id="versionModalFileName">File Versions</h5>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        
+        <div class="modal-body p-4">
+          <!-- Upload New Version Card -->
+          <div class="p-3 bg-light rounded-4 mb-4" id="uploadVersionContainer">
+            <label class="form-label text-muted small fw-bold text-uppercase">Upload New Version</label>
+            <div class="row g-2 align-items-center">
+              <div class="col-md-5">
+                <input type="file" class="form-control form-control-sm" id="versionFileInput">
+              </div>
+              <div class="col-md-4">
+                <input type="text" class="form-control form-control-sm" id="versionSummaryInput" placeholder="Change summary (optional)">
+              </div>
+              <div class="col-md-3">
+                <button class="btn btn-primary-custom btn-sm w-100" id="uploadVersionBtn" onclick="executeUploadVersion()">
+                  <i class="bi bi-cloud-arrow-up me-1"></i> Upload Version
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Version Table -->
+          <h6 class="text-muted fw-bold small text-uppercase mb-3">Version History</h6>
+          <div class="table-responsive border rounded-3 overflow-hidden">
+            <table class="table table-hover mb-0 align-middle">
+              <thead class="bg-light">
+                <tr>
+                  <th scope="col">Version</th>
+                  <th scope="col">Summary</th>
+                  <th scope="col">Size</th>
+                  <th scope="col">Uploaded By</th>
+                  <th scope="col">Date / Time</th>
+                  <th scope="col" class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="versionTableBody">
+                <!-- Dynamic versions -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="modal-footer border-top py-2 px-4">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Modal -->
+  <div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow" style="border-radius: 1rem;">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold text-danger" id="deleteModalTitle"><i class="bi bi-exclamation-triangle-fill me-2"></i> Confirm Action</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="deleteModalBody">
+          Are you sure you want to proceed?
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius: 0.5rem;">Cancel</button>
+          <button type="button" class="btn btn-danger" id="confirmDeleteBtn" style="border-radius: 0.5rem;">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- View / Preview Modal -->
+  <div class="modal fade" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl" id="previewModalDialog">
+      <div class="modal-content shadow-lg border-0" style="border-radius: 1.25rem; overflow: hidden; background: #ffffff;">
+        <div class="modal-header bg-light border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2 text-truncate me-3">
+            <span id="previewFileIcon" class="fs-4 text-primary"></span>
+            <div class="text-truncate">
+              <h5 class="modal-title fw-bold text-dark text-truncate m-0" id="previewFileName">File Preview</h5>
+              <div class="d-flex gap-2 align-items-center mt-1">
+                <span class="badge bg-primary bg-opacity-10 text-primary" id="previewFileType">TYPE</span>
+                <span class="text-muted small" id="previewFileSize">0 KB</span>
+              </div>
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="previewFullscreenBtn" title="Toggle Fullscreen">
+              <i class="bi bi-arrows-fullscreen"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-primary-custom px-3" id="previewDownloadBtn" style="width: auto;" title="Download File">
+              <i class="bi bi-download me-1"></i> Download
+            </button>
+            <button type="button" class="btn-close ms-2" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+        </div>
+
+        <div class="modal-body p-4 position-relative text-center d-flex flex-column align-items-center justify-content-center" id="previewModalBody" style="min-height: 400px; max-height: 75vh; overflow-y: auto; background-color: #f8fafc;">
+          <!-- Loading Spinner -->
+          <div id="previewLoader" class="d-flex flex-column align-items-center justify-content-center py-5">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
+            <p class="text-muted mt-3 mb-0">Loading file preview...</p>
+          </div>
+
+          <!-- Preview Content Container -->
+          <div id="previewContainer" class="w-100 h-100 d-none"></div>
+
+          <!-- Error State -->
+          <div id="previewError" class="d-none text-center py-5">
+            <i class="bi bi-exclamation-circle text-danger" style="font-size: 3rem;"></i>
+            <h6 class="text-danger fw-bold mt-2">Failed to load preview</h6>
+            <p class="text-muted small" id="previewErrorMsg">An error occurred while streaming the file.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap Bundle with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Main Logic -->
+  <script src="auth.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>
